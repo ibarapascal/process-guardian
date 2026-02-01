@@ -42,7 +42,7 @@ Claude Code plugin for auto-cleanup of orphan processes from AI coding sessions.
 
 ## Installation
 
-**From Marketplace** (wish it coming soon):
+**From Marketplace** (coming soon):
 ```bash
 claude plugin install process-guardian
 ```
