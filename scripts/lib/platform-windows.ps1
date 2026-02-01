@@ -111,11 +111,13 @@ foreach ($proc in $processes) {
             Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
             $killedCount++
 
-            # Truncate command for display
+            # Truncate command for display and escape for JSON
             $shortCmd = $cmdLine
             if ($shortCmd.Length -gt 50) {
                 $shortCmd = $shortCmd.Substring(0, 50) + "..."
             }
+            # Escape backslashes and double quotes for JSON
+            $shortCmd = $shortCmd.Replace('\', '\\').Replace('"', '\"')
             $killedList += "PID=$($proc.Id) $shortCmd"
         }
         # Unknown processes are silently ignored
@@ -124,12 +126,13 @@ foreach ($proc in $processes) {
     }
 }
 
-# Output results
+# Output results as JSON for CLI display
 if ($killedCount -gt 0) {
-    Write-Host "[Process Guardian] Cleaned $killedCount orphan process(es):"
+    $details = ""
     foreach ($item in $killedList) {
-        Write-Host "  $item"
+        $details += "\n  $item"
     }
+    Write-Output "{`"systemMessage`": `"[Process Guardian] Cleaned $killedCount orphan process(es):$details`"}"
 } else {
     # Random geek message when nothing to clean
     $messages = @(
@@ -140,5 +143,5 @@ if ($killedCount -gt 0) {
         "All systems green."
     )
     $idx = Get-Random -Maximum $messages.Count
-    Write-Host "[Process Guardian] No orphan processes. $($messages[$idx])"
+    Write-Output "{`"systemMessage`": `"[Process Guardian] No orphan processes. $($messages[$idx])`"}"
 }

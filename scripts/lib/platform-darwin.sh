@@ -31,19 +31,25 @@ scan_and_clean_darwin() {
             kill -9 "$pid" 2>/dev/null || true
             ((killed_count++)) || true
 
-            # Truncate command for display
+            # Truncate command for display and escape for JSON
             local short_cmd="${cmd:0:50}"
             [ ${#cmd} -gt 50 ] && short_cmd="${short_cmd}..."
+            # Escape backslashes and double quotes for JSON
+            short_cmd="${short_cmd//\\/\\\\}"
+            short_cmd="${short_cmd//\"/\\\"}"
             killed_list+=("PID=$pid $short_cmd")
         fi
         # Unknown processes are silently ignored
 
     done < <(ps -eo pid,ppid,pcpu,pmem,etime,command | awk '$2 == 1' | grep -E "$filter_pattern" 2>/dev/null || true)
 
-    # Output results
+    # Output results as JSON for CLI display
     if [ $killed_count -gt 0 ]; then
-        echo "[Process Guardian] Cleaned $killed_count orphan process(es):"
-        printf '  %s\n' "${killed_list[@]}"
+        local details=""
+        for item in "${killed_list[@]}"; do
+            details="${details}\\n  ${item}"
+        done
+        echo "{\"systemMessage\": \"[Process Guardian] Cleaned $killed_count orphan process(es):${details}\"}"
     else
         # Random geek message when nothing to clean
         local messages=(
@@ -54,6 +60,6 @@ scan_and_clean_darwin() {
             "All systems green."
         )
         local idx=$((RANDOM % ${#messages[@]}))
-        echo "[Process Guardian] No orphan processes. ${messages[$idx]}"
+        echo "{\"systemMessage\": \"[Process Guardian] No orphan processes. ${messages[$idx]}\"}"
     fi
 }

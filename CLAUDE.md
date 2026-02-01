@@ -132,6 +132,16 @@ is_known_process "node @playwright/mcp"
 - [ ] README.md updated
 - [ ] All content in English
 
+## Version Management
+
+When updating version or changelog, always update both together:
+
+1. `plugin.json` - version field
+2. `README.md` - version badge
+3. `CHANGELOG.md` - add new version entry
+
+**Trigger rule**: "changelog" or "version update" → update all three files.
+
 ---
 
 # Design Decisions
