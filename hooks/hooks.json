@@ -1,0 +1,17 @@
+{
+  "description": "Process Guardian - Auto-cleanup orphan processes on session start",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/scan-orphans.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "process-guardian",
+  "description": "Auto-cleanup orphan processes from Claude Code sessions. Detects and kills orphan Claude subagents, MCP servers, and browser instances on session start. Supports macOS, Linux, and Windows.",
+  "author": {
+    "name": "ibarapascal"
+  }
+}
