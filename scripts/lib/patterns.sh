@@ -107,5 +107,6 @@ is_known_process() {
 # Get pattern for initial process filtering (used by platform scripts)
 get_filter_pattern() {
     # Broad filter for ps output, then refined by is_known_process
-    echo "(claude --|@modelcontextprotocol|@playwright/mcp|context7-mcp|mcp-server|remote-debugging-port|ms-playwright|chrome-headless-shell|headless_shell)"
+    # Must cover all patterns in PATTERNS_* arrays
+    echo "(claude --|@modelcontextprotocol|@playwright/mcp|@executeautomation/playwright|playwright-mcp|mcp-server-playwright|context7-mcp|@upstash/context7-mcp|@anthropic/claude-mcp|@composio/mcp|apidog-mcp-server|remote-debugging-port|ms-playwright|chrome-headless-shell|headless_shell)"
 }

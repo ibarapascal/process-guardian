@@ -4,10 +4,17 @@
 
 **Auto-cleanup orphan processes from Claude Code sessions**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blueviolet)](https://docs.anthropic.com/en/docs/claude-code)
-[![Platform](https://img.shields.io/badge/platform-macOS%20|%20Linux%20|%20Windows-lightgrey)](https://github.com/ibarapascal/process-guardian)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-green)](https://modelcontextprotocol.io/)
+[![Platform](https://img.shields.io/badge/platform-macOS%20|%20Linux%20|%20Windows-lightgrey)](https://github.com/ibarapascal/process-guardian)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/ibarapascal/process-guardian/releases)
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Shell](https://img.shields.io/badge/Shell-Bash-4EAA25?logo=gnu-bash&logoColor=white)](https://www.gnu.org/software/bash/)
+[![PowerShell](https://img.shields.io/badge/PowerShell-5391FE?logo=powershell&logoColor=white)](https://docs.microsoft.com/en-us/powershell/)
+[![JSON](https://img.shields.io/badge/JSON-000000?logo=json&logoColor=white)](https://www.json.org/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/ibarapascal/process-guardian/pulls)
+[![AI Assisted](https://img.shields.io/badge/AI%20Assisted-Welcome-blueviolet)](https://github.com/ibarapascal/process-guardian)
 
 </div>
 
@@ -35,8 +42,14 @@ Claude Code plugin for auto-cleanup of orphan processes from AI coding sessions.
 
 ## Installation
 
+**From Marketplace** (wish it coming soon):
 ```bash
-claude plugin install process-guardian@local-dev
+claude plugin install process-guardian
+```
+
+**From GitHub**:
+```bash
+claude plugin install https://github.com/ibarapascal/process-guardian
 ```
 
 That's it. The plugin runs automatically on every session start.
@@ -155,13 +168,16 @@ claude  # with Playwright MCP configured
 
 All contributions must be in English.
 
+**🤖 AI-assisted contributions are welcome!** Feel free to use Claude Code, GitHub Copilot, or other AI tools to help with your contributions.
+
 ---
 
 ## Learn More
 
+- [Claude Code Plugins Reference](https://code.claude.com/docs/en/plugins-reference)
+- [Claude Code Official Marketplace](https://github.com/anthropics/claude-plugins-official)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
 - [MCP Servers Repository](https://github.com/modelcontextprotocol/servers)
-- [Claude Code Plugins](https://docs.anthropic.com/en/docs/claude-code)
 
 ---
 
@@ -174,6 +190,8 @@ MIT
 <div align="center">
 
 **Made for the Claude Code community**
+
+[![Star on GitHub](https://img.shields.io/github/stars/ibarapascal/process-guardian?style=social)](https://github.com/ibarapascal/process-guardian)
 
 [Report Bug](https://github.com/ibarapascal/process-guardian/issues) · [Request Feature](https://github.com/ibarapascal/process-guardian/issues)
 

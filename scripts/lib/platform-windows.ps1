@@ -3,6 +3,8 @@
 # =============================================================================
 # ALLOWLIST ONLY: Only kills processes that match known patterns.
 # Unknown processes are completely ignored (not reported, not killed).
+#
+# ORPHAN DETECTION: Only kills processes whose parent process no longer exists.
 # =============================================================================
 
 # =============================================================================
@@ -20,6 +22,7 @@ $KnownPatterns = @(
 
     # Playwright MCP
     "@playwright/mcp"
+    "@executeautomation/playwright-mcp-server"
     "playwright-mcp"
     "mcp-server-playwright"
 
@@ -55,8 +58,36 @@ function Test-KnownProcess {
     return $false
 }
 
+function Test-IsOrphan {
+    param([int]$ProcessId)
+
+    try {
+        $process = Get-CimInstance Win32_Process -Filter "ProcessId = $ProcessId" -ErrorAction SilentlyContinue
+        if (-not $process) {
+            return $false
+        }
+
+        $parentPid = $process.ParentProcessId
+        if ($parentPid -eq 0) {
+            # System process, not an orphan
+            return $false
+        }
+
+        # Check if parent process still exists
+        $parentProcess = Get-Process -Id $parentPid -ErrorAction SilentlyContinue
+        if (-not $parentProcess) {
+            # Parent process no longer exists - this is an orphan
+            return $true
+        }
+
+        return $false
+    } catch {
+        return $false
+    }
+}
+
 # =============================================================================
-# Main (Allowlist Approach)
+# Main (Allowlist + Orphan Detection)
 # =============================================================================
 
 $killedCount = 0
@@ -67,11 +98,16 @@ $processes = Get-Process -Name @("node", "claude") -ErrorAction SilentlyContinue
 
 foreach ($proc in $processes) {
     try {
+        # First check if it's an orphan process
+        if (-not (Test-IsOrphan $proc.Id)) {
+            continue
+        }
+
         # Get command line
         $cmdLine = (Get-CimInstance Win32_Process -Filter "ProcessId = $($proc.Id)" -ErrorAction SilentlyContinue).CommandLine
 
         if ($cmdLine -and (Test-KnownProcess $cmdLine)) {
-            # Only kill if it matches known patterns (allowlist)
+            # Only kill if it's orphan AND matches known patterns (allowlist)
             Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
             $killedCount++
 

@@ -28,7 +28,8 @@ scan_and_clean_linux() {
 
         # Only kill if it matches known patterns (allowlist)
         if is_known_process "$cmd"; then
-            kill -TERM "$pid" 2>/dev/null || true
+            # Force kill orphan processes immediately (no graceful wait to avoid blocking startup)
+            kill -9 "$pid" 2>/dev/null || true
             ((killed_count++)) || true
 
             # Truncate command for display
