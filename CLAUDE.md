@@ -22,21 +22,37 @@ Claude Code plugin for auto-cleanup of orphan processes from AI coding sessions.
 
 ## Architecture
 
+Two complementary layers run on SessionStart:
+
 ```
 SessionStart Hook
        │
-       ▼
-scan-orphans.sh (platform detection)
+       ├─► track-session.sh --session-start
+       │       │
+       │       ├─ Scan /tmp/claude-guardian-sessions/*
+       │       ├─ Crash exit (no .clean) → verify & kill tracked orphans
+       │       ├─ Clean exit (.clean) → silently skip
+       │       └─ Create PPID=1 baseline for new session
        │
-       ├─► platform-darwin.sh (macOS)
-       ├─► platform-linux.sh (Linux)
-       └─► platform-windows.ps1 (Windows)
-              │
-              ▼
-         patterns.sh (allowlist matching)
-              │
-              └─► Known → Auto-kill
-                  Unknown → Silently ignored
+       └─► scan-orphans.sh (existing allowlist)
+               │
+               ├─► platform-darwin.sh / linux / windows
+               └─► patterns.sh (allowlist matching)
+                     └─► Known → Auto-kill
+                         Unknown → Silently ignored
+
+PostToolUse(Bash) Hook
+       │
+       └─► track-session.sh --post-tool
+               │
+               ├─ Snapshot all PPID=1 processes (single ps call)
+               ├─ Diff against baseline
+               └─ New orphans → append to session tracking file
+
+SessionEnd Hook
+       │
+       └─► track-session.sh --session-end
+               └─ Create .clean marker (distinguishes clean exit from crash)
 ```
 
 ---
@@ -48,9 +64,10 @@ process-guardian/
 ├── .claude-plugin/
 │   └── plugin.json              # Plugin manifest
 ├── hooks/
-│   └── hooks.json               # SessionStart hook config
+│   └── hooks.json               # Hook config (SessionStart + PostToolUse + SessionEnd)
 ├── scripts/
-│   ├── scan-orphans.sh          # Main entry (platform detection)
+│   ├── scan-orphans.sh          # Allowlist scanner (platform detection)
+│   ├── track-session.sh         # Session PID tracker (PostToolUse/SessionStart/SessionEnd)
 │   └── lib/
 │       ├── patterns.sh          # Known process patterns (allowlist)
 │       ├── platform-darwin.sh   # macOS implementation
@@ -76,6 +93,17 @@ Central registry of known process patterns. Organized by category:
 - `PATTERNS_CONTEXT7_MCP` - Context7 MCP
 - `PATTERNS_PLAYWRIGHT_BROWSER` - Browser processes (Playwright-spawned only)
 - `PATTERNS_OTHER_MCP` - Other common MCP servers
+
+### track-session.sh
+
+Session PID tracking with three modes:
+
+- `--session-start`: Scans previous session tracking files, kills crash-exit orphans, creates baseline
+- `--post-tool`: After Bash tool calls, diffs PPID=1 snapshot against baseline, tracks new orphans
+- `--session-end`: Creates `.clean` marker to distinguish clean exits from crashes
+
+Tracking files in `/tmp/claude-guardian-sessions/` store `PID|lstart|command` tuples.
+Triple verification (PID + start time + command) prevents PID reuse false kills.
 
 ### Platform Scripts
 
@@ -173,6 +201,50 @@ We only target two categories of orphan processes:
    - Playwright MCP variants (`@playwright/mcp`, etc.)
    - Context7 MCP (`@upstash/context7-mcp`)
    - Browser instances spawned by Playwright/Puppeteer (identified by `--remote-debugging-port`, `ms-playwright`)
+
+---
+
+## Session PID Tracking
+
+**Complements the allowlist with per-session process tracking.**
+
+### Why Tracking?
+
+The allowlist covers known patterns (Claude subagents, MCP servers), but can't cover arbitrary
+processes spawned by Bash tool calls (Python scripts, Node servers, etc.). Session PID tracking
+fills this gap by recording which processes appeared during a session.
+
+### How It Works
+
+1. **SessionStart**: Baseline snapshot of PPID=1 processes on the current TTY
+2. **PostToolUse(Bash)**: After each Bash call, diff against baseline → track new PPID=1 processes
+3. **SessionEnd**: Mark `.clean` exit
+4. **Next SessionStart**: Crash (no `.clean`) → auto-kill tracked orphans; Clean → silently skip
+
+### Safety Measures
+
+- **Triple verification**: PID + start time + command must all match before killing
+- **Baseline diff**: Only tracks processes that appeared after session start (orphans lose TTY on macOS, so baseline diff is used instead of TTY filtering)
+- **Fail-open**: Any script error → `exit 0` (never blocks Claude)
+- **~50ms overhead**: Only on Bash tool calls; other tools have zero overhead
+
+### Known Limitations
+
+- **Cross-session tracking**: When multiple concurrent sessions exist, Session A's PostToolUse may
+  register orphans spawned by Session B. If A crashes, those processes may be killed on next start.
+  Impact is low: the processes are already orphaned (PPID=1) and ownerless.
+- **Clean-exit zombies**: Processes that become orphaned during a session but survive a clean exit
+  (`SessionEnd` fires) are not auto-killed. Use `/check` to find them manually.
+- **Windows**: Session tracking is not yet implemented for Windows (allowlist scanning works).
+
+### Temporary Files
+
+```
+/tmp/claude-guardian-sessions/          # Session tracking directory
+  {tty_safe}                            # Tracked PIDs: PID|lstart|command
+  {tty_safe}.clean                      # Clean exit marker
+/tmp/claude-guardian-baseline_{tty_safe} # PPID=1 baseline snapshot
+```
 
 ---
 

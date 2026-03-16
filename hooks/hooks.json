@@ -1,5 +1,5 @@
 {
-  "description": "Auto-cleanup orphan processes on session start",
+  "description": "Auto-cleanup orphan processes and track Bash-spawned processes",
   "hooks": {
     "SessionStart": [
       {
@@ -7,7 +7,36 @@
         "hooks": [
           {
             "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/track-session.sh --session-start",
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/scan-orphans.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/track-session.sh --post-tool",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/track-session.sh --session-end",
             "timeout": 5
           }
         ]

@@ -7,7 +7,7 @@
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blueviolet)](https://docs.anthropic.com/en/docs/claude-code)
 [![MCP Compatible](https://img.shields.io/badge/MCP-Compatible-green)](https://modelcontextprotocol.io/)
 [![Platform](https://img.shields.io/badge/platform-macOS%20|%20Linux%20|%20Windows-lightgrey)](https://github.com/ibarapascal/process-guardian)
-[![Version](https://img.shields.io/badge/version-0.1.1-blue)](https://github.com/ibarapascal/process-guardian/releases)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue)](https://github.com/ibarapascal/process-guardian/releases)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Shell](https://img.shields.io/badge/Shell-Bash-4EAA25?logo=gnu-bash&logoColor=white)](https://www.gnu.org/software/bash/)
@@ -30,13 +30,15 @@ Claude Code plugin for auto-cleanup of orphan processes from AI coding sessions.
 - Others go unnoticed until your machine freezes—manual cleanup gets old fast
 
 **What it does:**
-- Automatically cleans up orphan Claude subagents and MCP servers on session start
+- Automatically cleans up orphan Claude subagents and MCP servers on session start (allowlist)
+- Tracks processes spawned by Bash tool calls and cleans up orphans from crashed sessions (session tracking)
 - Provides `/check` command for manual process management
 - Supports macOS, Linux, and Windows
 
 **Key principle:**
-- Allowlist-only approach—only kills processes matching known patterns
-- Unknown processes are completely ignored
+- Two-layer defense: allowlist for known patterns + session tracking for arbitrary scripts
+- Allowlist-only for known processes—unknown processes are completely ignored
+- Session tracking catches anything spawned via Bash tool that becomes orphaned after a crash
 
 ---
 
@@ -61,9 +63,11 @@ That's it. The plugin runs automatically on every session start.
 ### Automatic (Default)
 
 Just start a new Claude session. Process Guardian will:
-1. Scan for orphan processes (ppid=1)
-2. Kill processes matching the allowlist
+1. **Session tracking**: Check for orphans from previous crashed sessions and kill verified ones
+2. **Allowlist scan**: Scan for orphan processes (ppid=1) matching known patterns and kill them
 3. Report what was cleaned (or a friendly status message)
+
+During your session, `PostToolUse(Bash)` hook silently tracks new PPID=1 processes (~50ms overhead per Bash call). On clean exit, tracking data is marked as clean. On crash/Ctrl+C, next session auto-cleans.
 
 ### Manual
 
@@ -71,7 +75,7 @@ Just start a new Claude session. Process Guardian will:
 /check
 ```
 
-Scans and displays orphan processes with options to kill specific ones.
+Scans and displays both tracked session processes and allowlist-matched orphan processes with options to kill specific ones.
 
 ---
 
@@ -103,13 +107,32 @@ Only these specific patterns:
 
 ---
 
+## How It Works
+
+### Layer 1: Allowlist Scanning (SessionStart)
+
+Scans PPID=1 processes and kills those matching known patterns (Claude subagents, MCP servers). Fast and deterministic.
+
+### Layer 2: Session PID Tracking (PostToolUse → SessionStart)
+
+Tracks processes spawned by Bash tool calls:
+
+1. **SessionStart**: Snapshots current PPID=1 processes as baseline
+2. **PostToolUse(Bash)**: After each Bash call, diffs against baseline → records new orphans
+3. **SessionEnd**: Marks `.clean` exit
+4. **Next SessionStart**: Crash (no `.clean`) → kills tracked orphans with triple verification (PID + start time + command)
+
+This catches arbitrary scripts (Python, Node, etc.) that allowlist can't cover.
+
+---
+
 ## Platform Support
 
-| Platform | Status |
-|----------|--------|
-| macOS | ✅ |
-| Linux | ✅ |
-| Windows | ✅ |
+| Platform | Allowlist Scan | Session Tracking |
+|----------|---------------|-----------------|
+| macOS | ✅ | ✅ |
+| Linux | ✅ | ✅ |
+| Windows | ✅ | — (not yet) |
 
 ---
 

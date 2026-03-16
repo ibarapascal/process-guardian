@@ -1,5 +1,5 @@
 ---
-description: "Scan and manage orphan Claude/MCP processes using allowlist approach"
+description: "Scan and manage orphan processes (tracked sessions + allowlist patterns)"
 ---
 
 # /check - Process Guardian
@@ -17,7 +17,41 @@ Determine the current operating system:
 - Linux: Use `ps`, `ss` or `lsof`, `kill`
 - Windows: Use PowerShell commands
 
-### Step 2: Scan Resources
+### Step 2: Scan Tracked Session Processes
+
+Check for processes tracked by session PID tracking:
+
+**macOS/Linux:**
+```bash
+echo "=== Tracked Session Processes ==="
+for f in /tmp/claude-guardian-sessions/*; do
+  [ -f "$f" ] || continue
+  [[ "$f" == *.clean ]] && continue
+  echo "--- Session: ${f##*/} ---"
+  while IFS='|' read -r pid lstart cmd; do
+    if ps -p "$pid" > /dev/null 2>&1; then
+      pcpu=$(ps -o pcpu= -p "$pid" 2>/dev/null | tr -d ' ')
+      etime=$(ps -o etime= -p "$pid" 2>/dev/null | tr -d ' ')
+      echo "  ALIVE  PID=$pid  CPU=${pcpu}%  Runtime=$etime  $cmd"
+    else
+      echo "  DEAD   PID=$pid  $cmd"
+    fi
+  done < "$f"
+done
+```
+
+Present tracked processes in a table:
+
+```
+## Tracked Session Processes (N)
+| # | PID | Status | CPU% | Runtime | Session | Command |
+|---|-----|--------|------|---------|---------|---------|
+| 1 | 61625 | alive | 99.7 | 3-16:30:00 | _dev_ttys003 | python3 structure.py |
+```
+
+If no tracked processes found, show "No tracked session processes."
+
+### Step 3: Scan Allowlist Resources
 
 Run the appropriate commands based on platform:
 
@@ -46,7 +80,7 @@ Get-Process -Name @("node", "claude") -ErrorAction SilentlyContinue |
     }
 ```
 
-### Step 3: Format Results
+### Step 4: Format Results
 
 Present the scan results in a clear table format:
 
@@ -60,7 +94,7 @@ Present the scan results in a clear table format:
 
 If no resources found, show "No orphan processes matching allowlist found."
 
-### Step 4: Present Options
+### Step 5: Present Options
 
 After showing results, present these options to the user:
 
@@ -71,7 +105,7 @@ After showing results, present these options to the user:
 3. Do nothing - Type "skip" or press Enter
 ```
 
-### Step 5: Execute User Choice
+### Step 6: Execute User Choice
 
 Based on user selection:
 
@@ -93,7 +127,7 @@ Stop-Process -Id <PID> -Force
 - Kill each one sequentially
 - Report results
 
-### Step 6: Confirm Results
+### Step 7: Confirm Results
 
 After executing kills, re-scan and confirm:
 - Show how many processes were killed
