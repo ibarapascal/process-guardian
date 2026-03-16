@@ -44,14 +44,9 @@ Claude Code plugin for auto-cleanup of orphan processes from AI coding sessions.
 
 ## Installation
 
-**From Marketplace** (coming soon):
 ```bash
-claude plugin install process-guardian
-```
-
-**From GitHub**:
-```bash
-claude plugin install https://github.com/ibarapascal/process-guardian
+claude plugin marketplace add ibarapascal/process-guardian
+claude plugin install process-guardian@process-guardian
 ```
 
 That's it. The plugin runs automatically on every session start.

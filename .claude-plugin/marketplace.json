@@ -1,0 +1,18 @@
+{
+  "name": "process-guardian",
+  "description": "Process Guardian plugin marketplace",
+  "owner": {
+    "name": "ibarapascal"
+  },
+  "plugins": [
+    {
+      "name": "process-guardian",
+      "description": "Auto-cleanup orphan processes from Claude Code sessions. Detects and kills orphan Claude subagents, MCP servers, and browser instances on session start. Tracks processes spawned by Bash tool calls and cleans up orphans from crashed sessions.",
+      "author": {
+        "name": "ibarapascal"
+      },
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}
