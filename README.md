@@ -20,6 +20,14 @@
 
 ---
 
+<div align="center">
+<img src="assets/screenshot-session-start.png" alt="Clean session" width="640">
+<br>
+<img src="assets/screenshot-cleanup.png" alt="Orphan cleanup" width="640">
+</div>
+
+---
+
 ## Overview
 
 Claude Code plugin for auto-cleanup of orphan processes from AI coding sessions.
